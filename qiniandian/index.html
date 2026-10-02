@@ -1,4 +1,4 @@
-<title>定陵玄宫</title>
+<title>祈年殿</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;600;900&display=swap">
@@ -50,7 +50,7 @@ body {
 .bigname {
   position: absolute; left: 8px; top: 118px;
   display: flex; flex-direction: column; font-family: var(--f-display); font-weight: 400;
-  font-size: min(24vh, 190px); line-height: 1; letter-spacing: 0.04em;
+  font-size: min(17vh, 150px); line-height: 1; letter-spacing: 0.04em;
   color: transparent; -webkit-text-stroke: 1px var(--ink); opacity: 0.38; pointer-events: none; user-select: none;
 }
 .head { position: absolute; top: 16px; left: 16px; pointer-events: none; max-width: min(440px, calc(100% - 120px)); }
@@ -109,6 +109,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
 .tools button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .tools button:focus-visible, .panel button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .hint { font-size: 11px; color: var(--ink-soft); }
+.tools .sep { width: 1px; align-self: stretch; background: var(--grid-major); margin: 0 2px; }
 
 #labels { position: absolute; inset: 0; pointer-events: none; }
 #leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
@@ -120,6 +121,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
 .note b { font-weight: 600; font-size: 12.5px; letter-spacing: 0.08em; }
 .note span { font-family: var(--f-mono); font-size: 10px; color: var(--ink-soft); }
 .note.flip { text-align: right; }
+.note.tag b { font-size: 12px; color: var(--red); background: var(--panel); padding: 0 3px; letter-spacing: 0.04em; }
 .note-red b { color: var(--red); font-family: var(--f-mono); font-weight: 500; letter-spacing: 0; }
 
 #figRing { position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
@@ -170,15 +172,14 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
     </g>
   </svg>
   <div id="stage"></div>
-  <div class="bigname" aria-hidden="true"><span>定</span><span>陵</span></div>
+  <div class="bigname" aria-hidden="true"><span>祈</span><span>年</span><span>殿</span></div>
   <svg id="leaders" aria-hidden="true"></svg>
   <div id="labels" aria-hidden="true"></div>
-  <div id="figRing" hidden><span>考古队</span></div>
 
   <header class="head">
-    <div class="eyebrow">MING · 十三陵 · 1584—1590</div>
-    <h1>定陵玄宫立体构造</h1>
-    <p>明神宗万历帝朱翊钧与孝端、孝靖皇后合葬墓。1956—1958 年发掘，是唯一一座主动发掘的明代帝陵。</p>
+    <div class="eyebrow">天坛 · 1545 / 1751 / 1896</div>
+    <h1>祈年殿立体木构</h1>
+    <p>明清两代皇帝孟春祈谷的大殿。三重檐圆攒尖，二十八根大柱，不用横跨全殿的大梁。</p>
   </header>
 
   <div class="compass" aria-hidden="true">
@@ -198,36 +199,6 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
     <div class="kicker" id="pKicker"></div>
     <h2 id="pTitle"></h2>
     <p id="pBody"></p>
-    <ul class="plist" id="pList" hidden></ul>
-    <div class="demo-fig" id="demoFig" hidden>
-      <svg viewBox="0 0 240 170" role="img" aria-label="自来石受力示意">
-        <line x1="10" y1="150" x2="230" y2="150" stroke="var(--ink)" stroke-width="1"/>
-        <g stroke="var(--ink-soft)" stroke-width="0.6">
-          <line x1="20" y1="150" x2="12" y2="158"/><line x1="40" y1="150" x2="32" y2="158"/><line x1="60" y1="150" x2="52" y2="158"/>
-          <line x1="180" y1="150" x2="172" y2="158"/><line x1="200" y1="150" x2="192" y2="158"/><line x1="220" y1="150" x2="212" y2="158"/>
-        </g>
-        <rect id="dLeaf" x="80" y="30" width="12" height="120" fill="var(--paper-deep)" stroke="var(--ink)" stroke-width="1"/>
-        <path d="M146 150 L146 156 L158 156 L158 150" fill="none" stroke="var(--ink)" stroke-width="1"/>
-        <line id="dStone" x1="152" y1="152" x2="152" y2="22" stroke="var(--ink)" stroke-width="7" stroke-linecap="square" opacity="0.85"/>
-        <g id="dPush" style="opacity:0">
-          <line x1="30" y1="100" x2="74" y2="100" stroke="var(--red)" stroke-width="2"/>
-          <path d="M74 100 l-7 -4 v8 z" fill="var(--red)"/>
-          <text x="34" y="92" font-size="11" fill="var(--red)" font-family="Noto Serif SC, serif">外推</text>
-        </g>
-        <g id="dForce" style="opacity:0">
-          <line x1="104" y1="44" x2="146" y2="140" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="4 3"/>
-          <path d="M148 146 l-1 -9 l-6 3 z" fill="var(--red)"/>
-          <text x="164" y="120" font-size="10" fill="var(--red)" font-family="Noto Serif SC, serif">力入地槽</text>
-        </g>
-        <g id="dKey" style="opacity:0">
-          <path d="M30 40 L100 40 L100 50" fill="none" stroke="var(--red)" stroke-width="2"/>
-          <text x="30" y="32" font-size="10" fill="var(--red)" font-family="Noto Serif SC, serif">拐钉钥匙</text>
-        </g>
-        <text x="58" y="20" font-size="10" fill="var(--ink-soft)" font-family="Noto Serif SC, serif">门外</text>
-        <text x="176" y="20" font-size="10" fill="var(--ink-soft)" font-family="Noto Serif SC, serif">门内</text>
-      </svg>
-      <div class="cap">侧视示意：门扇（左）与自来石（右）</div>
-    </div>
     <div class="pnav" id="pNav" hidden>
       <button type="button" id="pPrev">上一步</button>
       <span id="pCount"></span>
@@ -236,12 +207,12 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
   </section>
 
   <aside class="titleblock" aria-label="图签">
-    <div class="tb-name">定陵</div>
+    <div class="tb-name">祈年殿</div>
     <dl>
-      <dt>图名</dt><dd>定陵玄宫立体构造图</dd>
-      <dt>构造</dt><dd>石券五殿 · 汉白玉石门七道 · 深约 27 m</dd>
+      <dt>图名</dt><dd>天坛祈年殿立体木构图</dd>
+      <dt>构造</dt><dd>三重檐圆攒尖 · 柱 4 + 12 + 12 · 殿高 31.6 m</dd>
       <dt>表现</dt><dd>铅笔排线，淡彩</dd>
-      <dt>依据</dt><dd>公开发掘资料。地宫尺寸据记载；隧道走向与地上建筑为示意</dd>
+      <dt>依据</dt><dd>公开资料。台基、殿高、柱数与龙井柱尺寸据记载；斗拱、檐高、藻井为示意</dd>
     </dl>
   </aside>
 
@@ -253,7 +224,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
     </div>
     <div class="slider-row">
       <label for="secRange">剖切</label>
-      <input id="secRange" type="range" min="0" max="1000" step="1" value="500">
+      <input id="secRange" type="range" min="0" max="1000" step="1" value="0">
       <output id="secOut" for="secRange"></output>
     </div>
     <div class="tools">
@@ -261,10 +232,12 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
       <button type="button" id="btnRotate" aria-pressed="false">自动旋转</button>
       <button type="button" id="btnColor" aria-pressed="false">着色</button>
       <button type="button" id="btnWobble" aria-pressed="false">线条抖动</button>
-      <button type="button" id="btnNotes" aria-pressed="false">讲解文字</button>
-      <button type="button" id="btnDig" aria-pressed="false">跟随考古队</button>
-      <button type="button" id="btnDemo" aria-pressed="false">自来石</button>
-      <button type="button" id="btnWhy" aria-pressed="false">为什么挖不进去</button>
+      <button type="button" id="btnNarr" aria-pressed="true">讲解文字</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" id="btn_count" aria-pressed="false">数柱子</button>
+      <button type="button" id="btn_load" aria-pressed="false">不用大梁</button>
+      <button type="button" id="btn_history" aria-pressed="false">历史变迁</button>
+      <button type="button" id="btn_caisson" aria-pressed="false">仰望藻井</button>
       <button type="button" id="btnReset">视点复位</button>
     </div>
     <div class="hint">播放工程时不显示讲解文字 · 拖动旋转 · 滚轮缩放 · 右键平移</div>

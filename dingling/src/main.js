@@ -40,7 +40,7 @@ const state = {
   autoRotate: !reduceMotion,
   colorOn: false,
   wobble: true,
-  notes: true,
+  notes: true, // 讲解文字开关
   mode: 'free', // free | dig | demo | why
   step: 0,
 };
@@ -150,7 +150,7 @@ function updateLabels() {
   const earthDone = state.B >= 86 && state.S < 0.32;
   for (const L of labels) {
     const a = L.a;
-    let show = state.notes && state.B >= a.at && state.mode !== 'demo';
+    let show = state.notes && !state.playing && state.B >= a.at && state.mode !== 'demo';
     if (show && isClipped(a.pos, a.pos[1] > 0 && !a.red)) show = false;
     if (show && earthDone && a.pos[1] < -1) show = false;
     if (show) {
@@ -204,6 +204,7 @@ function syncUI() {
   setPressed('#btnColor', state.colorOn);
   setPressed('#btnWobble', state.wobble);
   setPressed('#btnNotes', state.notes);
+  if (state.mode !== 'free') panel.hidden = !state.notes;
   setPressed('#btnDig', state.mode === 'dig');
   setPressed('#btnDemo', state.mode === 'demo');
   setPressed('#btnWhy', state.mode === 'why');
@@ -248,6 +249,7 @@ function exitMode() {
 
 function enterDig() {
   exitMode();
+  state.notes = true;
   finishBuild();
   state.mode = 'dig';
   state.autoRotate = false;
@@ -290,6 +292,7 @@ function gotoStep(i) {
 
 function enterWhy() {
   exitMode();
+  state.notes = true;
   finishBuild();
   state.mode = 'why';
   state.autoRotate = false;
@@ -330,6 +333,7 @@ const DEMO_LEN = 14.5;
 let demoStart = 0;
 function enterDemo() {
   exitMode();
+  state.notes = true;
   finishBuild();
   state.mode = 'demo';
   state.autoRotate = false;
