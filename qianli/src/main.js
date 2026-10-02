@@ -7,6 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { analyse } from './mosaic.js';
+import { Music } from './music.js';
 
 const $ = (s) => document.querySelector(s);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -283,35 +284,78 @@ function camAt(t) {
   camera.position.copy(vA); controls.target.copy(vB);
 }
 
+// ---------- 全景机位：正对画面、居中、刚好装下 ----------
+const ELEV = THREE.MathUtils.degToRad(72);
+function overview(scale = 1) {
+  const vf = THREE.MathUtils.degToRad(camera.fov), hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  const dW = (WW / 2 + 0.9) / Math.tan(hf / 2);
+  const dH = (HH * Math.sin(ELEV) / 2 + 0.9) / Math.tan(vf / 2);
+  const d = Math.max(dW, dH) * 1.06 * scale;
+  const tgt = new THREE.Vector3(0, 0, 0.15);
+  return { pos: tgt.clone().add(new THREE.Vector3(0, Math.sin(ELEV) * d, Math.cos(ELEV) * d)), tgt };
+}
+let camTween = null;
+function flyHome(dur = 1.4) {
+  const o = overview();
+  camTween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: o.pos, t1: o.tgt, s: performance.now(), d: dur * 1000 };
+}
+
 // ---------- 状态与界面 ----------
-const state = { t: 0, cinematic: true, narr: true, orig: false, dof: true, playing: true };
+const state = { t: 0, started: false, follow: false, userMoved: false, narr: true, orig: false, ref: false, dof: true, music: true };
 let origMix = 0;
-const animating = () => state.t < animSpan + 1.2;
-const textOn = () => state.narr && !animating();
+const music = new Music();
+const animating = () => state.started && state.t < animSpan + 1.2;
+const textOn = () => state.narr && state.started && !animating();
 
 function restart() {
   state.t = reduceMotion ? animSpan + 2 : 0;
-  state.cinematic = !reduceMotion;
-  if (reduceMotion) { camera.position.set(0, 16.5, 8.2); controls.target.set(0, 0, -0.2); }
+  state.userMoved = false;
+  if (!state.follow) { const o = overview(); camera.position.copy(o.pos); controls.target.copy(o.tgt); }
+  if (state.started && !reduceMotion) music.start();
   syncUI();
 }
-renderer.domElement.addEventListener('pointerdown', () => { state.cinematic = false; });
-renderer.domElement.addEventListener('wheel', () => { state.cinematic = false; }, { passive: true });
+// 用户一拖动、滚轮，自动运镜立刻让出控制权
+controls.addEventListener('start', () => { state.userMoved = true; camTween = null; });
 
 const setPressed = (sel, on) => $(sel).setAttribute('aria-pressed', on ? 'true' : 'false');
 function syncUI() {
   setPressed('#btnNarr', state.narr);
   setPressed('#btnOrig', state.orig);
+  setPressed('#btnRef', state.ref);
   setPressed('#btnDof', state.dof);
+  setPressed('#btnFollow', state.follow);
+  setPressed('#btnMusic', state.music);
   for (const d of ['low', 'mid', 'high']) setPressed(`#d_${d}`, density === d);
   $('#card').hidden = !textOn();
   $('#head').hidden = !textOn();
+  $('#ref').hidden = !state.ref;
 }
-$('#btnReplay').addEventListener('click', restart);
+function begin(withMusic) {
+  state.music = withMusic;
+  music.on = withMusic;
+  $('#gate').hidden = true;
+  state.started = true;
+  restart();
+  music.setOn(withMusic);
+}
+$('#goMusic').addEventListener('click', () => begin(true));
+$('#goMute').addEventListener('click', () => begin(false));
+$('#btnReplay').addEventListener('click', () => { if (!state.started) begin(state.music); else restart(); });
 $('#btnNarr').addEventListener('click', () => { state.narr = !state.narr; syncUI(); });
 $('#btnOrig').addEventListener('click', () => { state.orig = !state.orig; syncUI(); });
+$('#btnRef').addEventListener('click', () => { state.ref = !state.ref; syncUI(); });
+$('#refClose').addEventListener('click', () => { state.ref = false; syncUI(); });
 $('#btnDof').addEventListener('click', () => { state.dof = !state.dof; syncUI(); });
+$('#btnFollow').addEventListener('click', () => { state.follow = !state.follow; state.userMoved = false; if (!state.follow) flyHome(); syncUI(); });
+$('#btnHome').addEventListener('click', () => { state.userMoved = true; state.follow = false; flyHome(); syncUI(); });
+$('#btnMusic').addEventListener('click', () => {
+  state.music = !state.music;
+  if (state.music && !music.ctx) { music.init(); music.on = true; music.start(); }
+  music.setOn(state.music);
+  syncUI();
+});
 for (const d of ['low', 'mid', 'high']) $(`#d_${d}`).addEventListener('click', () => { if (density !== d) { density = d; build(); } });
+window.addEventListener('resize', () => { if (!state.userMoved && !state.follow) { const o = overview(); camera.position.copy(o.pos); controls.target.copy(o.tgt); } });
 
 function fillCard(res) {
   $('#count').textContent = tileTotal.toLocaleString('zh-CN');
@@ -334,10 +378,22 @@ function fillCard(res) {
 let last = performance.now(), lastAnim = null;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (built) state.t += dt;
+  if (built && state.started) state.t += dt;
   U.uT.value = state.t;
-  if (state.cinematic && built) camAt(Math.min(state.t, 26));
-  controls.enabled = !state.cinematic || !animating();
+  if (camTween) {
+    const k = Math.min(1, (now - camTween.s) / camTween.d), e = k * k * (3 - 2 * k);
+    camera.position.lerpVectors(camTween.p0, camTween.p1, e);
+    controls.target.lerpVectors(camTween.t0, camTween.t1, e);
+    if (k >= 1) camTween = null;
+  } else if (built && !state.userMoved) {
+    if (state.follow && state.t < 26) camAt(state.t);
+    else if (state.follow) { state.follow = false; flyHome(2.2); syncUI(); }
+    else {
+      // 全景：铺砌过程中镜头缓缓推近一点
+      const o = overview(1.1 - 0.1 * Math.min(1, state.t / 24));
+      camera.position.lerp(o.pos, Math.min(1, dt * 2)); controls.target.lerp(o.tgt, Math.min(1, dt * 2));
+    }
+  }
   controls.update();
   const a = animating();
   if (a !== lastAnim) { lastAnim = a; syncUI(); }
@@ -348,12 +404,13 @@ function frame(now) {
     built.userData.orig.visible = origMix > 0.01;
     built.userData.sketch.material.opacity = 1 - Math.min(1, Math.max(0, (state.t - 12) / 10));
   }
+  const close = state.follow && !state.userMoved;
   bokeh.enabled = state.dof;
   bokeh.uniforms.focus.value = camera.position.distanceTo(controls.target);
-  const settle = Math.min(1, Math.max(0, (state.t - 19) / 5));
-  bokeh.uniforms.aperture.value = 0.0035 * (1 - settle) + 0.0006 * settle;
+  const settle = close ? Math.min(1, Math.max(0, (state.t - 19) / 5)) : 1;
+  bokeh.uniforms.aperture.value = 0.0035 * (1 - settle) + 0.0005 * settle;
   composer.render();
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__qj = { state, camera, controls, restart, camAt };
+window.__qj = { state, camera, controls, restart, camAt, begin, music };

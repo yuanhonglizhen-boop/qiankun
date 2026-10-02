@@ -106,9 +106,10 @@ export function analyse(img, { cell = 2, tile = 11 } = {}) {
     const x = Math.min(N - 2, Math.max(1, t.x | 0)), y = Math.min(M - 2, Math.max(1, t.y | 0)), i = y * N + x;
     const gx = Ds[i + 1] - Ds[i - 1], gy = Ds[i + N] - Ds[i - N];
     const ang = Math.atan2(gy, gx);
-    const c = meanColor(R, Gc, B, N, M, x - 1, y - 1, x + 2, y + 2);
+    const rr = Math.max(1, Math.round(s * 0.45));
+    const c = meanColor(R, Gc, B, N, M, x - rr, y - rr, x + rr + 1, y + rr + 1);
     const dSilk = Math.abs(c[0] - silk[0]) + Math.abs(c[1] - silk[1]) + Math.abs(c[2] - silk[2]);
-    const isSky = skyS[i] > 0.55 || (dSilk < 0.17 && E[i] < barrier * 0.8);
+    const isSky = skyS[i] > 0.55 || (dSilk < 0.17 && E[i] < barrier * 0.8 && t.y < M * 0.68);
     const [h, sat, lum] = hsl(c);
     let cls = 'stone';
     if (isSky) cls = 'gold';
