@@ -1,0 +1,102 @@
+<title>千里江山 · 镶嵌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Noto+Serif+SC:wght@400;600;900&display=swap">
+<style>
+/* 版式：整屏暗色展厅，作品居中平放；左上题签、右下说明牌、底部一排控制。单一深色主题。 */
+:root {
+  --wall: #15130f;
+  --ivory: #ece3cf;
+  --ivory-soft: #a99f8b;
+  --gold: #d6aa55;
+  --line: rgba(236, 227, 207, 0.16);
+  --panel: rgba(21, 19, 15, 0.78);
+  --f-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; overflow: hidden; background: var(--wall); color: var(--ivory); font-family: var(--f-display); }
+#stage { position: absolute; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+
+.head { position: absolute; left: 20px; top: 18px; pointer-events: none; }
+.head .eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.22em; color: var(--gold); }
+.head h1 { margin: 6px 0 0; font-weight: 900; font-size: 26px; letter-spacing: 0.3em; }
+.head p { margin: 4px 0 0; font-size: 12px; color: var(--ivory-soft); letter-spacing: 0.06em; }
+
+.card {
+  position: absolute; right: 20px; bottom: 20px; width: 300px; padding: 14px 16px 12px;
+  background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(6px);
+  font-size: 12px; line-height: 1.7;
+}
+.card h2 { margin: 0 0 2px; font-size: 15px; font-weight: 600; letter-spacing: 0.12em; }
+.card .meta { color: var(--ivory-soft); }
+.card dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.card dt { color: var(--ivory-soft); white-space: nowrap; }
+.card dd { margin: 0; min-width: 0; }
+.card .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; color: var(--gold); }
+.sw { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+.sw i { width: 10px; height: 10px; display: block; border-radius: 1px; }
+
+.bar { position: absolute; left: 20px; bottom: 20px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: calc(100% - 360px); }
+.bar button {
+  font-family: var(--f-display); font-size: 12px; letter-spacing: 0.08em; color: var(--ivory);
+  background: var(--panel); border: 1px solid var(--line); padding: 5px 12px; cursor: pointer;
+}
+.bar button:hover { border-color: var(--ivory-soft); }
+.bar button[aria-pressed="true"] { background: var(--ivory); color: var(--wall); border-color: var(--ivory); }
+.bar button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.bar .grp { display: inline-flex; gap: 0; }
+.bar .grp button + button { border-left: 0; }
+.bar .lab { font-size: 11px; color: var(--ivory-soft); margin: 0 2px 0 8px; letter-spacing: 0.1em; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ivory-soft); font-size: 13px; letter-spacing: 0.2em; pointer-events: none; }
+
+@media (max-width: 760px) {
+  .card { left: 16px; right: 16px; width: auto; bottom: 96px; }
+  .bar { left: 16px; right: 16px; max-width: none; bottom: 16px; }
+  .head h1 { font-size: 20px; }
+}
+</style>
+
+<div id="stage"></div>
+<div class="loading" id="loading">正在分析画面、排布镶嵌砖…</div>
+
+<header class="head" id="head" hidden>
+  <div class="eyebrow">OPUS VERMICULATUM · 北宋 · 1113</div>
+  <h1>千里江山</h1>
+  <p>王希孟《千里江山图》主峰段，以镶嵌砖重铺</p>
+</header>
+
+<aside class="card" id="card" hidden>
+  <h2>《千里江山图》· 主峰段</h2>
+  <div class="meta">北宋 王希孟 · 绢本设色 · 51.5 × 1191.5 cm · 故宫博物院藏。作画时年仅十八岁。</div>
+  <dl>
+    <dt>镶嵌砖</dt><dd><span class="num" id="count">—</span> 块，沿山形轮廓一圈圈铺砌</dd>
+    <dt>金箔砖</dt><dd><span class="num" id="n_gold">—</span> 块 · 绢地<div class="sw" id="sw_gold"></div></dd>
+    <dt>玻璃砖</dt><dd><span class="num" id="n_glass">—</span> 块 · 石青、石绿<div class="sw" id="sw_glass"></div></dd>
+    <dt>石块</dt><dd><span class="num" id="n_stone">—</span> 块 · 赭石、墨<div class="sw" id="sw_stone"></div></dd>
+  </dl>
+</aside>
+
+<nav class="bar" aria-label="控制">
+  <button type="button" id="btnReplay">重新铺砌</button>
+  <button type="button" id="btnNarr" aria-pressed="true">讲解文字</button>
+  <button type="button" id="btnOrig" aria-pressed="false">原画对照</button>
+  <button type="button" id="btnDof" aria-pressed="true">景深</button>
+  <span class="lab">砖距</span>
+  <span class="grp">
+    <button type="button" id="d_low" aria-pressed="false">疏</button>
+    <button type="button" id="d_mid" aria-pressed="true">中</button>
+    <button type="button" id="d_high" aria-pressed="false">密</button>
+  </span>
+</nav>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>
