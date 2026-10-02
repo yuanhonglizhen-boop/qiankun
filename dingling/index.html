@@ -1,0 +1,280 @@
+<title>定陵玄宫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;600;900&display=swap">
+<style>
+/* 版式：整屏方格纸图纸，左侧描边大字，右下图签，底部工程/剖切滑杆与工具按钮 */
+:root {
+  --paper: #ecebe6;
+  --paper-deep: #e2e1db;
+  --ink: #2b2d31;
+  --ink-soft: #686b70;
+  --red: #b8463a;
+  --grid: rgba(43, 45, 49, 0.065);
+  --grid-major: rgba(43, 45, 49, 0.12);
+  --panel: rgba(236, 235, 230, 0.93);
+  --f-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-body: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1d1f22; --paper-deep: #24272b; --ink: #dcd7cc; --ink-soft: #9b988f; --red: #e07a64;
+    --grid: rgba(220, 215, 204, 0.055); --grid-major: rgba(220, 215, 204, 0.1); --panel: rgba(29, 31, 34, 0.92);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1d1f22; --paper-deep: #24272b; --ink: #dcd7cc; --ink-soft: #9b988f; --red: #e07a64;
+  --grid: rgba(220, 215, 204, 0.055); --grid-major: rgba(220, 215, 204, 0.1); --panel: rgba(29, 31, 34, 0.92);
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; overflow: hidden; color: var(--ink); font-family: var(--f-body);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 12px 12px, 12px 12px;
+}
+.sheet { position: relative; height: 100%; width: 100%; overflow: hidden; }
+#stage { position: absolute; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#stage canvas:active { cursor: grabbing; }
+.rings { position: absolute; inset: 0; pointer-events: none; color: var(--ink); opacity: 0.16; }
+
+.bigname {
+  position: absolute; left: 8px; top: 118px;
+  display: flex; flex-direction: column; font-family: var(--f-display); font-weight: 400;
+  font-size: min(24vh, 190px); line-height: 1; letter-spacing: 0.04em;
+  color: transparent; -webkit-text-stroke: 1px var(--ink); opacity: 0.38; pointer-events: none; user-select: none;
+}
+.head { position: absolute; top: 16px; left: 16px; pointer-events: none; max-width: min(440px, calc(100% - 120px)); }
+.head .eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.18em; color: var(--red); }
+.head h1 { margin: 4px 0 2px; font-family: var(--f-display); font-weight: 900; font-size: 22px; letter-spacing: 0.12em; text-wrap: balance; }
+.head p { margin: 0; font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
+
+.compass { position: absolute; top: 14px; right: 16px; width: 64px; height: 64px; pointer-events: none; }
+.compass svg { width: 100%; height: 100%; overflow: visible; }
+#needle { transform-origin: 32px 32px; transition: transform 0.08s linear; }
+
+.titleblock {
+  position: absolute; right: 16px; bottom: 16px; width: 290px; border: 1px solid var(--ink);
+  background: var(--panel); font-size: 11px; pointer-events: none;
+}
+.titleblock .tb-name { font-family: var(--f-display); font-weight: 600; font-size: 20px; letter-spacing: 0.3em; padding: 8px 10px 6px; border-bottom: 1px solid var(--ink); }
+.titleblock dl { display: grid; grid-template-columns: 44px 1fr; margin: 0; }
+.titleblock dt, .titleblock dd { margin: 0; padding: 4px 8px; border-bottom: 1px solid var(--grid-major); }
+.titleblock dt { color: var(--ink-soft); border-right: 1px solid var(--grid-major); }
+.titleblock dd { line-height: 1.45; }
+.titleblock dl > :nth-last-child(-n+2) { border-bottom: 0; }
+
+.controls {
+  position: absolute; left: 16px; bottom: 16px; width: min(620px, calc(100% - 340px));
+  display: grid; gap: 8px;
+}
+.slider-row { display: grid; grid-template-columns: 34px 1fr 150px; align-items: center; gap: 10px; }
+.slider-row label { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.2em; }
+.slider-row output { font-family: var(--f-mono); font-size: 11px; color: var(--red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 10px; border-bottom: 1px solid var(--ink);
+  background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 10%) bottom / 100% 10px no-repeat,
+              repeating-linear-gradient(90deg, var(--ink-soft) 0 1px, transparent 1px 2%) bottom / 100% 5px no-repeat;
+}
+input[type=range]::-moz-range-track {
+  height: 10px; border-bottom: 1px solid var(--ink);
+  background: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 10%) bottom / 100% 10px no-repeat,
+              repeating-linear-gradient(90deg, var(--ink-soft) 0 1px, transparent 1px 2%) bottom / 100% 5px no-repeat;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 14px; margin-top: -6px; border: 0;
+  background: var(--red); clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+input[type=range]::-moz-range-thumb { width: 12px; height: 14px; border: 0; border-radius: 0; background: var(--red); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset: 3px; }
+
+.tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.tools button {
+  font-family: var(--f-body); font-size: 12px; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--ink); padding: 4px 10px 5px; cursor: pointer; letter-spacing: 0.06em;
+}
+.tools button:hover { background: var(--paper-deep); }
+.tools button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.tools button:focus-visible, .panel button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.hint { font-size: 11px; color: var(--ink-soft); }
+
+#labels { position: absolute; inset: 0; pointer-events: none; }
+#leaders { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+#leaders path { fill: none; stroke: var(--ink); stroke-width: 0.8; opacity: 0.75; }
+#leaders circle { fill: var(--ink); }
+#leaders .red { stroke: var(--red); }
+#leaders circle.red { fill: var(--red); stroke: none; }
+.note { position: absolute; left: 0; top: 0; display: grid; gap: 1px; padding: 0 2px; white-space: nowrap; }
+.note b { font-weight: 600; font-size: 12.5px; letter-spacing: 0.08em; }
+.note span { font-family: var(--f-mono); font-size: 10px; color: var(--ink-soft); }
+.note.flip { text-align: right; }
+.note-red b { color: var(--red); font-family: var(--f-mono); font-weight: 500; letter-spacing: 0; }
+
+#figRing { position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; }
+#figRing::before { content: ""; position: absolute; inset: 0; border: 1.5px solid var(--red); border-radius: 50%; }
+#figRing span { position: absolute; left: 40px; top: 6px; font-size: 11px; color: var(--red); white-space: nowrap; letter-spacing: 0.1em; }
+
+.panel {
+  position: absolute; right: 16px; top: 96px; width: 310px; max-height: calc(100% - 330px); overflow: auto;
+  background: var(--panel); border: 1px solid var(--ink); padding: 14px 16px 12px;
+}
+.panel .kicker { font-family: var(--f-mono); font-size: 11px; color: var(--red); letter-spacing: 0.08em; }
+.panel h2 { margin: 2px 0 8px; font-family: var(--f-display); font-weight: 600; font-size: 18px; letter-spacing: 0.1em; text-wrap: balance; }
+.panel p { margin: 0; font-size: 13px; line-height: 1.75; min-height: 3.5em; }
+.panel .close { position: absolute; top: 8px; right: 8px; border: 0; background: none; color: var(--ink-soft); font-size: 18px; cursor: pointer; line-height: 1; padding: 4px; }
+.pnav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.pnav button { font-family: var(--f-body); font-size: 12px; border: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 3px 10px; cursor: pointer; }
+.pnav button:disabled { opacity: 0.35; cursor: default; }
+.pnav span { font-family: var(--f-mono); font-size: 11px; color: var(--ink-soft); }
+.plist { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 4px; }
+.plist button {
+  width: 100%; display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; text-align: left;
+  font-family: var(--f-body); font-size: 12.5px; line-height: 1.6; color: var(--ink); background: transparent;
+  border: 0; border-top: 1px solid var(--grid-major); padding: 7px 2px; cursor: pointer;
+}
+.plist button:hover, .plist button[aria-current] { background: var(--paper-deep); }
+.plist i { font-style: normal; font-family: var(--f-display); font-weight: 900; font-size: 20px; line-height: 1.1; color: var(--red); }
+.demo-fig { margin-top: 10px; border-top: 1px solid var(--grid-major); padding-top: 8px; }
+.demo-fig svg { width: 100%; height: auto; display: block; }
+.demo-fig .cap { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+@media (max-width: 760px) {
+  .titleblock { display: none; }
+  .controls { width: auto; right: 16px; bottom: 12px; }
+  .slider-row { grid-template-columns: 30px 1fr 118px; gap: 8px; }
+  .bigname { font-size: 22vh; left: 4px; opacity: 0.22; }
+  .panel { left: 16px; right: 16px; width: auto; top: auto; bottom: 150px; max-height: 38%; }
+  .head h1 { font-size: 18px; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { #needle { transition: none; } }
+</style>
+
+<div class="sheet">
+  <svg class="rings" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="0.6">
+      <circle cx="560" cy="470" r="180"/><circle cx="560" cy="470" r="290" stroke-dasharray="2 5"/>
+      <circle cx="560" cy="470" r="400"/><circle cx="560" cy="470" r="520" stroke-dasharray="1 7"/>
+    </g>
+  </svg>
+  <div id="stage"></div>
+  <div class="bigname" aria-hidden="true"><span>定</span><span>陵</span></div>
+  <svg id="leaders" aria-hidden="true"></svg>
+  <div id="labels" aria-hidden="true"></div>
+  <div id="figRing" hidden><span>考古队</span></div>
+
+  <header class="head">
+    <div class="eyebrow">MING · 十三陵 · 1584—1590</div>
+    <h1>定陵玄宫立体构造</h1>
+    <p>明神宗万历帝朱翊钧与孝端、孝靖皇后合葬墓。1956—1958 年发掘，是唯一一座主动发掘的明代帝陵。</p>
+  </header>
+
+  <div class="compass" aria-hidden="true">
+    <svg viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="22" fill="none" stroke="var(--ink)" stroke-width="0.7"/>
+      <circle cx="32" cy="32" r="2" fill="var(--ink)"/>
+      <g id="needle">
+        <path d="M32 6 L36 32 L32 29 L28 32 Z" fill="var(--red)"/>
+        <path d="M32 58 L36 32 L32 35 L28 32 Z" fill="none" stroke="var(--ink)" stroke-width="0.7"/>
+        <text x="32" y="3" text-anchor="middle" font-size="9" fill="var(--red)" font-family="Noto Serif SC, serif">北</text>
+      </g>
+    </svg>
+  </div>
+
+  <section class="panel" id="panel" hidden aria-live="polite">
+    <button class="close" id="pClose" type="button" aria-label="关闭讲解">×</button>
+    <div class="kicker" id="pKicker"></div>
+    <h2 id="pTitle"></h2>
+    <p id="pBody"></p>
+    <ul class="plist" id="pList" hidden></ul>
+    <div class="demo-fig" id="demoFig" hidden>
+      <svg viewBox="0 0 240 170" role="img" aria-label="自来石受力示意">
+        <line x1="10" y1="150" x2="230" y2="150" stroke="var(--ink)" stroke-width="1"/>
+        <g stroke="var(--ink-soft)" stroke-width="0.6">
+          <line x1="20" y1="150" x2="12" y2="158"/><line x1="40" y1="150" x2="32" y2="158"/><line x1="60" y1="150" x2="52" y2="158"/>
+          <line x1="180" y1="150" x2="172" y2="158"/><line x1="200" y1="150" x2="192" y2="158"/><line x1="220" y1="150" x2="212" y2="158"/>
+        </g>
+        <rect id="dLeaf" x="80" y="30" width="12" height="120" fill="var(--paper-deep)" stroke="var(--ink)" stroke-width="1"/>
+        <path d="M146 150 L146 156 L158 156 L158 150" fill="none" stroke="var(--ink)" stroke-width="1"/>
+        <line id="dStone" x1="152" y1="152" x2="152" y2="22" stroke="var(--ink)" stroke-width="7" stroke-linecap="square" opacity="0.85"/>
+        <g id="dPush" style="opacity:0">
+          <line x1="30" y1="100" x2="74" y2="100" stroke="var(--red)" stroke-width="2"/>
+          <path d="M74 100 l-7 -4 v8 z" fill="var(--red)"/>
+          <text x="34" y="92" font-size="11" fill="var(--red)" font-family="Noto Serif SC, serif">外推</text>
+        </g>
+        <g id="dForce" style="opacity:0">
+          <line x1="104" y1="44" x2="146" y2="140" stroke="var(--red)" stroke-width="1.4" stroke-dasharray="4 3"/>
+          <path d="M148 146 l-1 -9 l-6 3 z" fill="var(--red)"/>
+          <text x="164" y="120" font-size="10" fill="var(--red)" font-family="Noto Serif SC, serif">力入地槽</text>
+        </g>
+        <g id="dKey" style="opacity:0">
+          <path d="M30 40 L100 40 L100 50" fill="none" stroke="var(--red)" stroke-width="2"/>
+          <text x="30" y="32" font-size="10" fill="var(--red)" font-family="Noto Serif SC, serif">拐钉钥匙</text>
+        </g>
+        <text x="58" y="20" font-size="10" fill="var(--ink-soft)" font-family="Noto Serif SC, serif">门外</text>
+        <text x="176" y="20" font-size="10" fill="var(--ink-soft)" font-family="Noto Serif SC, serif">门内</text>
+      </svg>
+      <div class="cap">侧视示意：门扇（左）与自来石（右）</div>
+    </div>
+    <div class="pnav" id="pNav" hidden>
+      <button type="button" id="pPrev">上一步</button>
+      <span id="pCount"></span>
+      <button type="button" id="pNext">下一步</button>
+    </div>
+  </section>
+
+  <aside class="titleblock" aria-label="图签">
+    <div class="tb-name">定陵</div>
+    <dl>
+      <dt>图名</dt><dd>定陵玄宫立体构造图</dd>
+      <dt>构造</dt><dd>石券五殿 · 汉白玉石门七道 · 深约 27 m</dd>
+      <dt>表现</dt><dd>铅笔排线，淡彩</dd>
+      <dt>依据</dt><dd>公开发掘资料。地宫尺寸据记载；隧道走向与地上建筑为示意</dd>
+    </dl>
+  </aside>
+
+  <div class="controls">
+    <div class="slider-row">
+      <label for="buildRange">工程</label>
+      <input id="buildRange" type="range" min="0" max="1000" step="1" value="0">
+      <output id="buildOut" for="buildRange"></output>
+    </div>
+    <div class="slider-row">
+      <label for="secRange">剖切</label>
+      <input id="secRange" type="range" min="0" max="1000" step="1" value="500">
+      <output id="secOut" for="secRange"></output>
+    </div>
+    <div class="tools">
+      <button type="button" id="btnPlay" aria-pressed="false">播放工程</button>
+      <button type="button" id="btnRotate" aria-pressed="false">自动旋转</button>
+      <button type="button" id="btnColor" aria-pressed="false">着色</button>
+      <button type="button" id="btnWobble" aria-pressed="false">线条抖动</button>
+      <button type="button" id="btnNotes" aria-pressed="false">注记</button>
+      <button type="button" id="btnDig" aria-pressed="false">跟随考古队</button>
+      <button type="button" id="btnDemo" aria-pressed="false">自来石</button>
+      <button type="button" id="btnWhy" aria-pressed="false">为什么挖不进去</button>
+      <button type="button" id="btnReset">视点复位</button>
+    </div>
+    <div class="hint">拖动旋转 · 滚轮缩放 · 右键平移</div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>
