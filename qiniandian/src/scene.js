@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { TIERS, TOP, FLOOR, COLUMNS, colAngles, ROOFS, DRUMS } from './data.js';
-import { PieceSet, addBox, boxMatrix, lathe, solid, linesOnly, circleSegs, clamp01 } from './builders.js';
+import { PieceSet, addBox, boxMatrix, lathe, solid, linesOnly, circleSegs, clamp01, finialGeos } from './builders.js';
 import { makeLocal } from './materials.js';
 
 const TINT = {
@@ -219,7 +219,10 @@ export function buildHall(scene) {
   });
 
   // ---------- 宝顶 ----------
-  growSolid(lathe([[0, 0], [0.95, 0], [1.15, 0.35], [0.75, 0.95], [0.95, 1.55], [0.5, 2.35], [0.62, 2.85], [0.16, 3.6], [0, 3.6]], 32).translate(0, ROOFS[2].top[1], 0), TINT.gold, 78, 82, { edgeAngle: 35, detail: 2 });
+  {
+    const f = finialGeos(ROOFS[2].top[1] - 0.2);
+    growSolid(mergeGeos([f.base, f.neck, f.ball]), TINT.gold, 78, 82, { edgeAngle: 35, detail: 2 });
+  }
 
   // ---------- 天花与藻井（殿内） ----------
   {

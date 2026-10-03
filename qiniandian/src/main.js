@@ -48,13 +48,14 @@ const state = {
   colorOn: false,
   wobble: true,
   narr: true,        // 讲解文字开关
-  real: true,        // 竣工后切换为写实材质
+  paint: 0,          // 上色进度 0–1，由上色滑杆或“播放上色”控制
+  painting: false,   // 正在播放上色
   mode: 'free',      // free | count | load | history | caisson
   step: 0,
 };
 let colorMix = 0, sectionTween = null, camTween = null, buildAnim = null, fovTarget = 34;
 let paintP = 0;
-const textOn = () => state.narr && !state.playing && !buildAnim && !(paintP > 0 && paintP < 1);
+const textOn = () => state.narr && !state.playing && !buildAnim && !state.painting;
 
 // ---------- 主题 ----------
 function readTheme() {
@@ -185,6 +186,9 @@ function animateBuild(to, dur, done) {
 // ---------- 界面 ----------
 const buildRange = $('#buildRange'), secRange = $('#secRange');
 const buildOut = $('#buildOut'), secOut = $('#secOut');
+const paintRange = $('#paintRange'), paintOut = $('#paintOut');
+const PAINT_STAGES = [[0, '台基'], [0.1, '红柱槅扇'], [0.26, '鼓身彩画'], [0.34, '斗拱额枋'], [0.5, '下檐'], [0.62, '中檐'], [0.74, '上檐'], [0.84, '点金'], [1, '上色完成']];
+const paintStage = (p) => { let n = PAINT_STAGES[0][1]; for (const [a, t] of PAINT_STAGES) if (p >= a - 1e-6) n = t; return p <= 0 ? '未上色' : n; };
 function setPressed(sel, on) { $(sel).setAttribute('aria-pressed', on ? 'true' : 'false'); }
 function syncUI() {
   buildRange.value = Math.round(state.B * 10);
@@ -196,7 +200,11 @@ function syncUI() {
   setPressed('#btnColor', state.colorOn);
   setPressed('#btnWobble', state.wobble);
   setPressed('#btnNarr', state.narr);
-  setPressed('#btnReal', state.real);
+  setPressed('#btnPaint', state.painting);
+  const canPaint = state.B >= 99.5;
+  paintRange.disabled = !canPaint;
+  paintRange.value = Math.round(state.paint * 1000);
+  paintOut.textContent = canPaint ? `${paintStage(state.paint)}　${String(Math.round(state.paint * 100)).padStart(3, '0')}%` : '先完成线描';
   for (const m of ['count', 'load', 'history', 'caisson']) setPressed(`#btn_${m}`, state.mode === m);
   panel.hidden = state.mode === 'free' || !textOn();
 }
@@ -205,14 +213,23 @@ buildRange.addEventListener('input', () => { state.playing = false; buildAnim = 
 secRange.addEventListener('input', () => { sectionTween = null; state.S = secRange.value / 1000; syncUI(); });
 $('#btnPlay').addEventListener('click', () => {
   if (state.playing) state.playing = false;
-  else { exitMode(); if (state.B >= 100) state.B = 0; state.playing = true; }
+  else { exitMode(); if (state.B >= 100) state.B = 0; state.playing = true; state.painting = false; state.paint = 0; }
   syncUI();
 });
 $('#btnRotate').addEventListener('click', () => { state.autoRotate = !state.autoRotate; syncUI(); });
 $('#btnColor').addEventListener('click', () => { state.colorOn = !state.colorOn; syncUI(); });
 $('#btnWobble').addEventListener('click', () => { state.wobble = !state.wobble; syncUI(); });
 $('#btnNarr').addEventListener('click', () => { state.narr = !state.narr; syncUI(); });
-$('#btnReal').addEventListener('click', () => { state.real = !state.real; syncUI(); });
+$('#btnPaint').addEventListener('click', () => {
+  if (state.painting) state.painting = false;
+  else {
+    if (state.B < 99.5) { state.playing = false; buildAnim = null; state.B = 100; }
+    if (state.paint >= 1) state.paint = 0;
+    state.painting = true;
+  }
+  syncUI();
+});
+paintRange.addEventListener('input', () => { state.painting = false; state.paint = paintRange.value / 1000; syncUI(); });
 $('#btnReset').addEventListener('click', () => { exitMode(); flyTo(HOME.pos.toArray(), HOME.target.toArray()); tweenSection(0); });
 $('#btn_count').addEventListener('click', () => (state.mode === 'count' ? exitMode() : enterMode('count')));
 $('#btn_load').addEventListener('click', () => (state.mode === 'load' ? exitMode() : enterMode('load')));
@@ -300,6 +317,7 @@ function gotoStep(i) {
     loadShow = st.show;
     flyTo(st.rings ? [34, 30, 6] : [44, 18, 4], st.rings ? [0, 14, 0] : [0, 17, 0]);
   } else if (state.mode === 'history') {
+    if (state.paint < 1 && !state.painting) state.paint = 1;
     pKicker.textContent = st.kicker;
     tweenSection(0);
     setRoofTints(st.tiers);
@@ -332,7 +350,7 @@ function frame(now) {
     state.S = sectionTween.from + (sectionTween.to - sectionTween.from) * ease(k);
     if (k >= 1) sectionTween = null;
   }
-  const sig = `${state.B.toFixed(1)}|${state.S.toFixed(3)}|${state.playing}|${!!buildAnim}`;
+  const sig = `${state.B.toFixed(1)}|${state.S.toFixed(3)}|${state.playing}|${!!buildAnim}|${state.paint.toFixed(3)}|${state.painting}`;
   if (sig !== lastSig) { lastSig = sig; syncUI(); }
   if (camTween) {
     const k = ease(Math.min(1, (now - camTween.s) / camTween.d));
@@ -349,21 +367,21 @@ function frame(now) {
   controls.update();
 
   // 写实开启时，线稿阶段保持黑白素描，颜色交给上色过程
-  const autoColor = state.real ? 0 : Math.max(0, Math.min(1, (state.B - 94) / 6));
+  // 线描阶段保持黑白素描；“淡彩”按钮可以单独打开线稿上的水彩
+  const autoColor = 0;
   const target = state.colorOn || state.mode === 'history' || state.mode === 'count' ? 1 : autoColor;
   colorMix += (target - colorMix) * Math.min(1, dt * 3);
   G.uColor.value = colorMix;
 
   applyBuild(model, state.B);
-  const wantReal = state.real && state.B >= 99.5 && state.mode !== 'count' && state.mode !== 'load';
-  // 上色：线稿完成后约 9 秒逐部位刷出颜色；关掉写实时快速退回
-  const prevP = paintP;
-  if (!wantReal && state.B < 99.5) paintP = 0;
-  else if (reduceMotion) paintP = wantReal ? 1 : 0;
-  else if (wantReal) paintP = Math.min(1, paintP + dt / 9);
-  else paintP = Math.max(0, paintP - dt / 1.2);
+  if (state.painting) {
+    state.paint = reduceMotion ? 1 : Math.min(1, state.paint + dt / 12);
+    if (state.paint >= 1) state.painting = false;
+  }
+  // 上色：线稿完成后约 12 秒逐部位刷出颜色；关掉写实时快速退回
+  // 上色只在线描完成后生效；数柱子、不用大梁两个模式固定显示线稿
+  paintP = state.B >= 99.5 && state.mode !== 'count' && state.mode !== 'load' ? state.paint : 0;
   real.setProgress(paintP);
-  if ((prevP > 0 && prevP < 1) !== (paintP > 0 && paintP < 1)) syncUI();
   if (load.pathObj.visible) {
     const t = ((now - loadStart) / 2600) % 1.25;
     load.local.uProg.value = Math.min(loadShow, t);
@@ -383,4 +401,4 @@ function updateCompass() {
 
 syncUI();
 requestAnimationFrame(frame);
-window.__qn = { state, camera, controls, model, flyTo, tweenSection, enterMode, gotoStep, exitMode, setPaint: (v) => { paintP = v; } };
+window.__qn = { state, camera, controls, model, flyTo, tweenSection, enterMode, gotoStep, exitMode, setPaint: (v) => { state.paint = v; } };

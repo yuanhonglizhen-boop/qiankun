@@ -297,3 +297,12 @@ export function circleSegs(cx, y, cz, r, n = 128, dash = 0) {
   }
   return out;
 }
+
+// 宝顶：深蓝叠层底座 + 鎏金颈 + 圆宝珠。线稿和写实共用同一套几何，上色时形状不变
+export function finialGeos(y) {
+  const L = (pts, n) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+  const base = L([[0, 0], [1.45, 0], [1.45, 0.45], [1.15, 0.55], [1.15, 1.05], [0.9, 1.15], [0.9, 1.6], [0, 1.6]], 48).translate(0, y, 0);
+  const neck = L([[0, 0], [0.42, 0], [0.55, 0.16], [0.36, 0.32], [0.32, 0.8], [0.48, 0.92], [0, 0.95]], 32).translate(0, y + 1.6, 0);
+  const ball = new THREE.SphereGeometry(0.82, 40, 24).scale(1, 1.18, 1).translate(0, y + 1.6 + 0.95 + 0.9, 0);
+  return { base, neck, ball };
+}

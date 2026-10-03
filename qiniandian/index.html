@@ -98,6 +98,7 @@ input[type=range]::-webkit-slider-thumb {
   background: var(--red); clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 input[type=range]::-moz-range-thumb { width: 12px; height: 14px; border: 0; border-radius: 0; background: var(--red); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+input[type=range]:disabled { opacity: 0.35; cursor: not-allowed; }
 input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset: 3px; }
 
 .tools { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -235,13 +236,18 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
       <input id="secRange" type="range" min="0" max="1000" step="1" value="0">
       <output id="secOut" for="secRange"></output>
     </div>
+    <div class="slider-row">
+      <label for="paintRange">上色</label>
+      <input id="paintRange" type="range" min="0" max="1000" step="1" value="0">
+      <output id="paintOut" for="paintRange"></output>
+    </div>
     <div class="tools">
       <button type="button" id="btnPlay" aria-pressed="false">播放工程</button>
       <button type="button" id="btnRotate" aria-pressed="false">自动旋转</button>
-      <button type="button" id="btnColor" aria-pressed="false">着色</button>
+      <button type="button" id="btnColor" aria-pressed="false">淡彩</button>
       <button type="button" id="btnWobble" aria-pressed="false">线条抖动</button>
       <button type="button" id="btnNarr" aria-pressed="true">讲解文字</button>
-      <button type="button" id="btnReal" aria-pressed="true">写实</button>
+      <button type="button" id="btnPaint" aria-pressed="false">播放上色</button>
       <span class="sep" aria-hidden="true"></span>
       <button type="button" id="btn_count" aria-pressed="false">数柱子</button>
       <button type="button" id="btn_load" aria-pressed="false">不用大梁</button>
@@ -249,7 +255,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
       <button type="button" id="btn_caisson" aria-pressed="false">仰望藻井</button>
       <button type="button" id="btnReset">视点复位</button>
     </div>
-    <div class="hint">播放工程时不显示讲解文字 · 拖动旋转 · 滚轮缩放 · 右键平移</div>
+    <div class="hint">工程滑杆只管线描，上色滑杆单独控制 · 播放时不显示讲解文字 · 拖动旋转 · 滚轮缩放 · 右键平移</div>
   </div>
 </div>
 

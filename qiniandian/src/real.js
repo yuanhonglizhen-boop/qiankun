@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { COLUMNS, ROOFS, DRUMS, FLOOR, colAngles } from './data.js';
+import { finialGeos } from './builders.js';
 
 const ROOF_BLUE = '#28354f'; // 按实拍照片取色：受光面约 RGB(100,115,140) 的灰蓝
 
@@ -46,7 +47,7 @@ export function buildReal(scene, renderer, model) {
   const lacquer = clip(new THREE.MeshPhysicalMaterial({ color: '#86301f', roughness: 0.36, clearcoat: 0.45, clearcoatRoughness: 0.3 }), [0.1, 0.38], [FLOOR, 25.5]);
   const paint = clip(new THREE.MeshStandardMaterial({ color: '#1f4652', roughness: 0.6 }), [0.34, 0.58], [11, 26]);
   const ceiling = clip(new THREE.MeshStandardMaterial({ color: '#2d6766', roughness: 0.7 }), [0.38, 0.58], [10, 30]);
-  const gold = clip(new THREE.MeshStandardMaterial({ color: '#e0ac45', metalness: 1, roughness: 0.26 }), [0.88, 1], [33, 37]);
+  const gold = clip(new THREE.MeshStandardMaterial({ color: '#e0ac45', metalness: 1, roughness: 0.26 }), [0.84, 1], [ROOFS[2].top[1] + 1.3, ROOFS[2].top[1] + 4.6]);
   const roofMats = ROOFS.map((rf, i) => {
     const m = tileRoof(ROOF_BLUE, Math.round(rf.lip[0] * 2 * Math.PI / 0.55));
     m.userData.key = 'roof' + i;
@@ -131,15 +132,15 @@ export function buildReal(scene, renderer, model) {
     add(new THREE.Mesh(new THREE.TorusGeometry(rf.lip[0] - 0.02, 0.07, 6, 240).rotateX(Math.PI / 2).translate(0, rf.lip[1] - 0.28, 0), m));
   });
 
-  // 宝顶：深蓝叠层底座 + 鎏金颈 + 圆宝珠
+  // 宝顶：先刷深蓝底座，再由下往上慢慢点金（几何与线稿相同）
   {
     const y = ROOFS[2].top[1] - 0.2;
-    const base = new THREE.LatheGeometry([[0, 0], [1.45, 0], [1.45, 0.45], [1.15, 0.55], [1.15, 1.05], [0.9, 1.15], [0.9, 1.6], [0, 1.6]].map(([a, b]) => new THREE.Vector2(a, b)), 48).translate(0, y, 0);
-    add(new THREE.Mesh(base, roofMats[2]));
-    const neck = new THREE.LatheGeometry([[0, 0], [0.42, 0], [0.55, 0.16], [0.36, 0.32], [0.32, 0.8], [0.48, 0.92], [0, 0.95]].map(([a, b]) => new THREE.Vector2(a, b)), 32).translate(0, y + 1.6, 0);
-    add(new THREE.Mesh(neck, gold));
-    const ball = new THREE.SphereGeometry(0.82, 40, 24).scale(1, 1.18, 1).translate(0, y + 1.6 + 0.95 + 0.9, 0);
-    add(new THREE.Mesh(ball, gold));
+    const f = finialGeos(y);
+    const baseMat = tileRoof(ROOF_BLUE, 72); baseMat.userData.key = 'finial';
+    roofMats.push(clip(baseMat, [0.78, 0.88], [y, y + 1.6]));
+    add(new THREE.Mesh(f.base, roofMats[roofMats.length - 1]));
+    add(new THREE.Mesh(f.neck, gold));
+    add(new THREE.Mesh(f.ball, gold));
   }
 
   // 匾额：上层南面，蓝底金字"祈年殿"
@@ -190,7 +191,7 @@ export function buildReal(scene, renderer, model) {
     if (sky) sky.style.opacity = String(smooth(p, 0, 0.8));
   }
   function setRoofColors(list) {
-    roofMats.forEach((m, i) => m.color.set(list ? list[i] : ROOF_BLUE));
+    roofMats.forEach((m, i) => m.color.set(list ? list[Math.min(i, 2)] : ROOF_BLUE));
   }
   setProgress(0);
   return { setProgress, setRoofColors, progress: () => P };
