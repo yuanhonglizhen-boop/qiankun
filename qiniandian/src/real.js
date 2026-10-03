@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { COLUMNS, ROOFS, DRUMS, FLOOR, colAngles } from './data.js';
 
-const ROOF_BLUE = '#16357a';
+const ROOF_BLUE = '#17224a'; // 照片里的琉璃瓦是很深的藏青
 
 export function buildReal(scene, renderer, model) {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -44,7 +44,7 @@ export function buildReal(scene, renderer, model) {
   const marble = clip(new THREE.MeshStandardMaterial({ color: '#ece8df', roughness: 0.5 }), [0, 0.22], [0, 6.2]);
   const floor = clip(new THREE.MeshStandardMaterial({ color: '#6f6b66', roughness: 0.8 }), [0.06, 0.2], [5, 6]);
   const lacquer = clip(new THREE.MeshPhysicalMaterial({ color: '#8c1c13', roughness: 0.36, clearcoat: 0.45, clearcoatRoughness: 0.3 }), [0.1, 0.38], [FLOOR, 25.5]);
-  const paint = clip(new THREE.MeshStandardMaterial({ color: '#2f6a63', roughness: 0.62 }), [0.34, 0.58], [11, 26]);
+  const paint = clip(new THREE.MeshStandardMaterial({ color: '#1f4652', roughness: 0.6 }), [0.34, 0.58], [11, 26]);
   const ceiling = clip(new THREE.MeshStandardMaterial({ color: '#2d6766', roughness: 0.7 }), [0.38, 0.58], [10, 30]);
   const gold = clip(new THREE.MeshStandardMaterial({ color: '#e0ac45', metalness: 1, roughness: 0.26 }), [0.88, 1], [33, 37]);
   const roofMats = ROOFS.map((rf, i) => {
@@ -53,14 +53,14 @@ export function buildReal(scene, renderer, model) {
     return clip(m, [0.5 + i * 0.12, 0.7 + i * 0.12], [rf.lip[1] - 1.2, rf.top[1] + 0.4]);
   });
   const byTint = {
-    d8d2c3: marble, ece7da: marble, a83a2c: lacquer, '3f7a74': paint, c9a24a: gold,
+    d8d2c3: marble, ece7da: marble, a83a2c: lacquer, '3f7a74': paint, c9a24a: null,
     '3c6f73': ceiling, '8d8a84': floor, '9b3a2e': null, a3402f: null,
   };
 
   // ---------- 纹理 ----------
   const leafTex = canvasTex(128, 512, drawLeaf);
-  const winTex = canvasTex(256, 160, drawWindow); winTex.wrapS = THREE.RepeatWrapping;
-  const bandTex = canvasTex(512, 64, drawBand); bandTex.wrapS = THREE.RepeatWrapping;
+  const winTex = canvasTex(512, 256, drawDrum); winTex.wrapS = THREE.RepeatWrapping;
+  const bandTex = canvasTex(512, 128, drawBand); bandTex.wrapS = THREE.RepeatWrapping;
 
   // ---------- 细部 ----------
   const extras = new THREE.Group();
@@ -70,14 +70,14 @@ export function buildReal(scene, renderer, model) {
 
   // 两层鼓身：红色槛窗
   DRUMS.forEach((d, i) => {
-    const t = winTex.clone(); t.needsUpdate = true; t.repeat.set(i === 0 ? 24 : 16, 1);
+    const t = winTex.clone(); t.needsUpdate = true; t.repeat.set(i === 0 ? 12 : 9, 1);
     const g = new THREE.CylinderGeometry(d.r + 0.02, d.r + 0.02, d.y1 - d.y0, 128, 1, true).translate(0, (d.y0 + d.y1) / 2, 0);
     add(new THREE.Mesh(g, clip(new THREE.MeshStandardMaterial({ map: t, roughness: 0.5 }), [0.26 + i * 0.08, 0.48 + i * 0.08], [d.y0, d.y1])));
   });
 
   // 檐下彩画带（额枋）
   const bands = [
-    [COLUMNS.eave.r + 0.36, COLUMNS.eave.top - 1.5, COLUMNS.eave.top, 26],
+    [COLUMNS.eave.r + 0.36, COLUMNS.eave.top - 1.9, COLUMNS.eave.top, 18],
     [DRUMS[0].r + 0.2, DRUMS[0].y1 - 0.9, DRUMS[0].y1 + 0.05, 20],
     [DRUMS[1].r + 0.2, DRUMS[1].y1 - 0.9, DRUMS[1].y1 + 0.05, 14],
   ];
@@ -125,13 +125,30 @@ export function buildReal(scene, renderer, model) {
     if (ri < 2) add(new THREE.Mesh(new THREE.TorusGeometry(r1 + 0.1, 0.28, 10, 160).rotateX(Math.PI / 2).translate(0, y1 + 0.05, 0), roofMats[ri]));
   });
 
+  // 檐口一道细红线（连檐、瓦口）
+  ROOFS.forEach((rf, ri) => {
+    const m = clip(new THREE.MeshStandardMaterial({ color: '#8a2c1e', roughness: 0.5 }), [0.52 + ri * 0.12, 0.7 + ri * 0.12], [rf.lip[1] - 1, rf.lip[1] + 0.5]);
+    add(new THREE.Mesh(new THREE.TorusGeometry(rf.lip[0] - 0.02, 0.07, 6, 240).rotateX(Math.PI / 2).translate(0, rf.lip[1] - 0.28, 0), m));
+  });
+
+  // 宝顶：深蓝叠层底座 + 鎏金颈 + 圆宝珠
+  {
+    const y = ROOFS[2].top[1] - 0.2;
+    const base = new THREE.LatheGeometry([[0, 0], [1.45, 0], [1.45, 0.45], [1.15, 0.55], [1.15, 1.05], [0.9, 1.15], [0.9, 1.6], [0, 1.6]].map(([a, b]) => new THREE.Vector2(a, b)), 48).translate(0, y, 0);
+    add(new THREE.Mesh(base, roofMats[2]));
+    const neck = new THREE.LatheGeometry([[0, 0], [0.42, 0], [0.55, 0.16], [0.36, 0.32], [0.32, 0.8], [0.48, 0.92], [0, 0.95]].map(([a, b]) => new THREE.Vector2(a, b)), 32).translate(0, y + 1.6, 0);
+    add(new THREE.Mesh(neck, gold));
+    const ball = new THREE.SphereGeometry(0.82, 40, 24).scale(1, 1.18, 1).translate(0, y + 1.6 + 0.95 + 0.9, 0);
+    add(new THREE.Mesh(ball, gold));
+  }
+
   // 匾额：上层南面，蓝底金字"祈年殿"
-  const plaqueTex = canvasTex(256, 640, drawPlaque);
-  const plaque = add(new THREE.Mesh(new THREE.BoxGeometry(1.5, 3.6, 0.2), [
-    ...[0, 1, 2, 3, 4, 5].map((k) => clip(k === 4 ? new THREE.MeshStandardMaterial({ map: plaqueTex, roughness: 0.4, metalness: 0.15 }) : new THREE.MeshStandardMaterial({ color: k === 2 || k === 3 ? '#c9a24a' : '#1d3b74' }), [0.8, 0.94], [21, 25])),
+  const plaqueTex = canvasTex(256, 512, drawPlaque);
+  const plaque = add(new THREE.Mesh(new THREE.BoxGeometry(2.3, 4.6, 0.25), [
+    ...[0, 1, 2, 3, 4, 5].map((k) => clip(k === 4 ? new THREE.MeshStandardMaterial({ map: plaqueTex, roughness: 0.4, metalness: 0.15 }) : new THREE.MeshStandardMaterial({ color: '#c9982f', metalness: 0.6, roughness: 0.35 }), [0.8, 0.94], [21, 27])),
   ]));
-  plaque.position.set(0, (DRUMS[1].y0 + DRUMS[1].y1) / 2 - 0.2, DRUMS[1].r + 0.35);
-  if (document.fonts) document.fonts.ready.then(() => { drawPlaque(plaqueTex.image.getContext('2d'), 256, 640); plaqueTex.needsUpdate = true; });
+  plaque.position.set(0, DRUMS[1].y1 - 1.3, DRUMS[1].r + 0.55);
+  if (document.fonts) document.fonts.ready.then(() => { drawPlaque(plaqueTex.image.getContext('2d'), 256, 512); plaqueTex.needsUpdate = true; });
 
   // ---------- 上色过程 ----------
   // 每个线稿网格配一个写实"孪生"网格；上色时孪生网格按时段、由下往上带毛边地刷出来，
@@ -213,7 +230,7 @@ function paintIn(sh) {
 
 // 琉璃瓦：按角度起伏的瓦垄（法线扰动 + 明暗），按半径的瓦节；远处自动减弱避免摩尔纹
 function tileRoof(color, rows) {
-  const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.34, clearcoat: 0.7, clearcoatRoughness: 0.18 });
+  const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.4, clearcoat: 0.45, clearcoatRoughness: 0.25 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uRows = { value: rows };
     sh.vertexShader = sh.vertexShader
@@ -272,42 +289,91 @@ function lattice(g, x, y, w, h, step) {
   g.restore();
 }
 function drawLeaf(g, w, h) {
+  // 照片里的槅扇：朱红边框，红褐色菱花格心，少量金线
   g.fillStyle = '#8f2418'; g.fillRect(0, 0, w, h);
   g.strokeStyle = '#5b130c'; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
-  lattice(g, 14, 18, w - 28, h * 0.56, 16);
+  const x = 14, y = 18, lw = w - 28, lh = h * 0.56;
+  g.fillStyle = '#4a120c'; g.fillRect(x, y, lw, lh);
+  g.save(); g.beginPath(); g.rect(x, y, lw, lh); g.clip();
+  g.strokeStyle = '#c0563a'; g.lineWidth = 3;
+  for (let k = -lh; k < lw + lh; k += 14) {
+    g.beginPath(); g.moveTo(x + k, y); g.lineTo(x + k + lh, y + lh); g.stroke();
+    g.beginPath(); g.moveTo(x + k + lh, y); g.lineTo(x + k, y + lh); g.stroke();
+  }
+  g.strokeStyle = 'rgba(192,86,58,0.7)'; g.lineWidth = 2;
+  for (let yy = y; yy < y + lh; yy += 14) { g.beginPath(); g.moveTo(x, yy); g.lineTo(x + lw, yy); g.stroke(); }
+  g.restore();
   g.strokeStyle = '#c99a45'; g.lineWidth = 2;
+  g.strokeRect(x, y, lw, lh);
   g.strokeRect(14, h * 0.62, w - 28, h * 0.06);
   g.strokeRect(18, h * 0.72, w - 36, h * 0.22);
   g.beginPath(); g.ellipse(w / 2, h * 0.83, w * 0.22, h * 0.06, 0, 0, Math.PI * 2); g.stroke();
 }
-function drawWindow(g, w, h) {
-  g.fillStyle = '#8f2418'; g.fillRect(0, 0, w, h);
-  g.fillStyle = '#6e1810'; g.fillRect(0, 0, 14, h); g.fillRect(w - 14, 0, 14, h);
-  for (let k = 0; k < 3; k++) lattice(g, 24 + k * 72, 18, 64, h - 36, 12);
-  g.strokeStyle = '#c99a45'; g.lineWidth = 2; g.strokeRect(20, 14, w - 40, h - 28);
-}
-function drawBand(g, w, h) {
-  const seg = w / 4;
-  for (let k = 0; k < 4; k++) {
-    g.fillStyle = k % 2 ? '#2f7a5c' : '#1f4f8a';
-    g.fillRect(k * seg, 0, seg, h);
-    g.strokeStyle = '#d8b24a'; g.lineWidth = 3;
-    g.beginPath(); g.moveTo(k * seg + seg * 0.18, 6); g.lineTo(k * seg + seg * 0.5, h / 2); g.lineTo(k * seg + seg * 0.18, h - 6); g.stroke();
-    g.beginPath(); g.moveTo(k * seg + seg * 0.82, 6); g.lineTo(k * seg + seg * 0.5, h / 2); g.lineTo(k * seg + seg * 0.82, h - 6); g.stroke();
-    g.fillStyle = '#e9e4d6';
-    g.beginPath(); g.arc(k * seg + seg * 0.5, h / 2, h * 0.16, 0, Math.PI * 2); g.fill();
-    g.fillStyle = k % 2 ? '#1f4f8a' : '#2f7a5c';
-    g.beginPath(); g.arc(k * seg + seg * 0.5, h / 2, h * 0.08, 0, Math.PI * 2); g.fill();
+// 鼓身：青绿与蓝相间的方心彩画，金框金纹，下压一条深蓝带
+function drawDrum(g, w, h) {
+  const bandH = h * 0.22;
+  g.fillStyle = '#16244a'; g.fillRect(0, h - bandH, w, bandH);
+  g.fillStyle = '#c9a24a'; g.fillRect(0, h - bandH - 4, w, 4);
+  const panels = 2, pw = w / panels;
+  for (let k = 0; k < panels; k++) {
+    const x0 = k * pw;
+    g.fillStyle = '#1e3f86'; g.fillRect(x0, 0, pw, h - bandH - 4);
+    g.fillStyle = k % 2 ? '#2a8f86' : '#2f8a6a';
+    g.fillRect(x0 + pw * 0.12, h * 0.1, pw * 0.76, h * 0.52);
+    g.strokeStyle = '#d8b24a'; g.lineWidth = 6;
+    g.strokeRect(x0 + pw * 0.12, h * 0.1, pw * 0.76, h * 0.52);
+    // 金色龙凤纹（简化为盘曲的金线与宝珠）
+    g.lineWidth = 5; g.lineCap = 'round';
+    const cx = x0 + pw / 2, cy = h * 0.36;
+    g.beginPath();
+    g.moveTo(cx - pw * 0.3, cy + 20);
+    g.bezierCurveTo(cx - pw * 0.18, cy - 50, cx - pw * 0.02, cy + 50, cx + pw * 0.1, cy - 10);
+    g.bezierCurveTo(cx + pw * 0.18, cy - 50, cx + pw * 0.28, cy + 10, cx + pw * 0.32, cy - 18);
+    g.stroke();
+    g.fillStyle = '#e6c25a';
+    g.beginPath(); g.arc(cx + pw * 0.02, cy - 30, 11, 0, Math.PI * 2); g.fill();
+    for (let j = 0; j < 4; j++) { g.beginPath(); g.arc(cx - pw * 0.24 + j * pw * 0.15, cy + 34, 5, 0, Math.PI * 2); g.fill(); }
+    // 两侧的箍头
+    g.fillStyle = '#2a8f86'; g.fillRect(x0, 0, pw * 0.08, h - bandH - 4);
+    g.fillStyle = '#d8b24a'; g.fillRect(x0 + pw * 0.08, 0, 4, h - bandH - 4); g.fillRect(x0 + pw * 0.92 - 4, 0, 4, h - bandH - 4);
+    g.fillRect(x0, h * 0.68, pw, 4);
   }
-  g.fillStyle = '#d8b24a'; g.fillRect(0, 0, w, 4); g.fillRect(0, h - 4, w, 4);
+}
+// 一层檐下：上下两条额枋彩画，金色更多
+function drawBand(g, w, h) {
+  const row = (y0, rh, flip) => {
+    const seg = w / 4;
+    for (let k = 0; k < 4; k++) {
+      const blue = (k + flip) % 2 === 0;
+      g.fillStyle = blue ? '#1f4f9a' : '#2a8a6c';
+      g.fillRect(k * seg, y0, seg, rh);
+      g.strokeStyle = '#d8b24a'; g.lineWidth = 4;
+      g.beginPath(); g.moveTo(k * seg + seg * 0.16, y0 + 4); g.lineTo(k * seg + seg * 0.32, y0 + rh / 2); g.lineTo(k * seg + seg * 0.16, y0 + rh - 4); g.stroke();
+      g.beginPath(); g.moveTo(k * seg + seg * 0.84, y0 + 4); g.lineTo(k * seg + seg * 0.68, y0 + rh / 2); g.lineTo(k * seg + seg * 0.84, y0 + rh - 4); g.stroke();
+      g.fillStyle = '#d8b24a';
+      g.beginPath(); g.ellipse(k * seg + seg / 2, y0 + rh / 2, seg * 0.12, rh * 0.28, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = blue ? '#2a8a6c' : '#1f4f9a';
+      g.beginPath(); g.ellipse(k * seg + seg / 2, y0 + rh / 2, seg * 0.06, rh * 0.14, 0, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = '#d8b24a'; g.fillRect(0, y0, w, 3); g.fillRect(0, y0 + rh - 3, w, 3);
+  };
+  row(0, h * 0.55, 0);
+  g.fillStyle = '#8f2418'; g.fillRect(0, h * 0.55, w, h * 0.08);
+  row(h * 0.63, h * 0.37, 1);
 }
 function drawPlaque(g, w, h) {
-  g.fillStyle = '#1d3b74'; g.fillRect(0, 0, w, h);
-  g.strokeStyle = '#d4a446'; g.lineWidth = 22; g.strokeRect(11, 11, w - 22, h - 22);
-  g.lineWidth = 3; g.strokeRect(34, 34, w - 68, h - 68);
-  g.fillStyle = '#e2b453';
-  g.font = '900 150px "Noto Serif SC", "Songti SC", "SimSun", serif';
+  // 宽金边（雕龙框，简化为凹凸的金色纹带）+ 蓝底金字
+  g.fillStyle = '#c9982f'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#e3bb55';
+  for (let i = 0; i < 26; i++) {
+    const t = i / 26;
+    for (const [x, y] of [[t * w, 14], [t * w, h - 14], [14, t * h], [w - 14, t * h]]) { g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill(); }
+  }
+  g.strokeStyle = '#8a6420'; g.lineWidth = 3; g.strokeRect(36, 36, w - 72, h - 72);
+  g.fillStyle = '#1f3c8c'; g.fillRect(44, 44, w - 88, h - 88);
+  g.fillStyle = '#e8c35e';
+  g.font = '700 96px "Noto Serif SC", "Songti SC", "SimSun", serif';
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  ['祈', '年', '殿'].forEach((c, i) => g.fillText(c, w / 2, h * (0.22 + i * 0.28)));
+  ['祈', '年', '殿'].forEach((c, i) => g.fillText(c, w / 2, h * (0.27 + i * 0.23)));
 }
 function polar(r, a, y = 0) { return new THREE.Vector3(r * Math.cos(a), y, r * Math.sin(a)); }

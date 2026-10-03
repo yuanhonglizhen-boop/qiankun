@@ -27,7 +27,7 @@ export function colAngles(c) {
 export const ROOFS = [
   { name: '下檐', lip: [15.2, 13.1], top: [8.9, 15.7], bracketR: 11.4, bracketY: 12.3, n: 60 },
   { name: '中檐', lip: [11.8, 18.8], top: [6.5, 21.1], bracketR: 8.25, bracketY: 18.1, n: 48 },
-  { name: '上檐', lip: [9.2, 25.6], top: [0.7, 33.2], bracketR: 6.1, bracketY: 24.9, n: 36 },
+  { name: '上檐', lip: [9.2, 25.6], top: [0.7, 32.4], bracketR: 6.1, bracketY: 24.9, n: 36 },
 ];
 export const DRUMS = [
   { r: 8.6, y0: 15.6, y1: 18.1 },   // 中层鼓身（槛窗）
