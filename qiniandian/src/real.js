@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { COLUMNS, ROOFS, DRUMS, FLOOR, colAngles } from './data.js';
 
-const ROOF_BLUE = '#17224a'; // 照片里的琉璃瓦是很深的藏青
+const ROOF_BLUE = '#28354f'; // 按实拍照片取色：受光面约 RGB(100,115,140) 的灰蓝
 
 export function buildReal(scene, renderer, model) {
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -43,7 +43,7 @@ export function buildReal(scene, renderer, model) {
   };
   const marble = clip(new THREE.MeshStandardMaterial({ color: '#ece8df', roughness: 0.5 }), [0, 0.22], [0, 6.2]);
   const floor = clip(new THREE.MeshStandardMaterial({ color: '#6f6b66', roughness: 0.8 }), [0.06, 0.2], [5, 6]);
-  const lacquer = clip(new THREE.MeshPhysicalMaterial({ color: '#8c1c13', roughness: 0.36, clearcoat: 0.45, clearcoatRoughness: 0.3 }), [0.1, 0.38], [FLOOR, 25.5]);
+  const lacquer = clip(new THREE.MeshPhysicalMaterial({ color: '#86301f', roughness: 0.36, clearcoat: 0.45, clearcoatRoughness: 0.3 }), [0.1, 0.38], [FLOOR, 25.5]);
   const paint = clip(new THREE.MeshStandardMaterial({ color: '#1f4652', roughness: 0.6 }), [0.34, 0.58], [11, 26]);
   const ceiling = clip(new THREE.MeshStandardMaterial({ color: '#2d6766', roughness: 0.7 }), [0.38, 0.58], [10, 30]);
   const gold = clip(new THREE.MeshStandardMaterial({ color: '#e0ac45', metalness: 1, roughness: 0.26 }), [0.88, 1], [33, 37]);
@@ -230,7 +230,7 @@ function paintIn(sh) {
 
 // 琉璃瓦：按角度起伏的瓦垄（法线扰动 + 明暗），按半径的瓦节；远处自动减弱避免摩尔纹
 function tileRoof(color, rows) {
-  const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.4, clearcoat: 0.45, clearcoatRoughness: 0.25 });
+  const m = new THREE.MeshPhysicalMaterial({ color, roughness: 0.58, clearcoat: 0.18, clearcoatRoughness: 0.4 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uRows = { value: rows };
     sh.vertexShader = sh.vertexShader
@@ -252,7 +252,7 @@ function tileRoof(color, rows) {
           float qRib = pow(0.5 + 0.5 * cos(qTh), 0.7);
           float qCourse = fract(length(vWP.xz) / 0.42);
           float qFadeC = clamp(1.0 - fwidth(length(vWP.xz) / 0.42) * 1.5, 0.0, 1.0);
-          diffuseColor.rgb *= mix(1.0, 0.45 + 0.7 * qRib, qFade);
+          diffuseColor.rgb *= mix(1.0, 0.72 + 0.34 * qRib, qFade);
           diffuseColor.rgb *= mix(1.0, 0.82 + 0.18 * smoothstep(0.0, 0.2, qCourse), qFadeC);
         }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
@@ -261,7 +261,7 @@ function tileRoof(color, rows) {
           vec3 tw = vec3(-sin(th), 0.0, cos(th));
           vec3 tv = normalize((viewMatrix * vec4(tw, 0.0)).xyz);
           float f = clamp(1.0 - fwidth(th * uRows) * 0.45, 0.0, 1.0);
-          normal = normalize(normal - tv * sin(th * uRows) * 0.75 * f);
+          normal = normalize(normal - tv * sin(th * uRows) * 0.45 * f);
         }`);
   };
   return m;
