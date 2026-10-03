@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { G, clipPlanes } from './materials.js';
 import { buildHall, applyBuild, buildLoadPaths, polar } from './scene.js';
+import { buildReal } from './real.js';
 import { FLOOR, COLUMNS, colAngles, ANNOTATIONS, COUNT_STEPS, LOAD_STEPS, HISTORY, stageName } from './data.js';
 
 const $ = (s) => document.querySelector(s);
@@ -11,6 +12,9 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 const stage = $('#stage');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.localClippingEnabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setClearColor(0x000000, 0);
 stage.appendChild(renderer.domElement);
 
@@ -29,6 +33,8 @@ controls.autoRotateSpeed = 0.4;
 controls.update();
 
 const model = buildHall(scene);
+model.clipPlanes = clipPlanes;
+const real = buildReal(scene, renderer, model);
 const load = buildLoadPaths(scene);
 scene.updateMatrixWorld(true);
 
@@ -41,6 +47,7 @@ const state = {
   colorOn: false,
   wobble: true,
   narr: true,        // 讲解文字开关
+  real: true,        // 竣工后切换为写实材质
   mode: 'free',      // free | count | load | history | caisson
   step: 0,
 };
@@ -187,6 +194,7 @@ function syncUI() {
   setPressed('#btnColor', state.colorOn);
   setPressed('#btnWobble', state.wobble);
   setPressed('#btnNarr', state.narr);
+  setPressed('#btnReal', state.real);
   for (const m of ['count', 'load', 'history', 'caisson']) setPressed(`#btn_${m}`, state.mode === m);
   panel.hidden = state.mode === 'free' || !textOn();
 }
@@ -202,6 +210,7 @@ $('#btnRotate').addEventListener('click', () => { state.autoRotate = !state.auto
 $('#btnColor').addEventListener('click', () => { state.colorOn = !state.colorOn; syncUI(); });
 $('#btnWobble').addEventListener('click', () => { state.wobble = !state.wobble; syncUI(); });
 $('#btnNarr').addEventListener('click', () => { state.narr = !state.narr; syncUI(); });
+$('#btnReal').addEventListener('click', () => { state.real = !state.real; syncUI(); });
 $('#btnReset').addEventListener('click', () => { exitMode(); flyTo(HOME.pos.toArray(), HOME.target.toArray()); tweenSection(0); });
 $('#btn_count').addEventListener('click', () => (state.mode === 'count' ? exitMode() : enterMode('count')));
 $('#btn_load').addEventListener('click', () => (state.mode === 'load' ? exitMode() : enterMode('load')));
@@ -217,7 +226,8 @@ $('#pNext').addEventListener('click', () => gotoStep(state.step + 1));
 
 const roofTints = model.roofs.map((r) => r.obj.children[0].material.uniforms.uTint.value.clone());
 function setRoofTints(list) {
-  model.roofs.forEach((r, i) => r.obj.children[0].material.uniforms.uTint.value.set(list ? list[i] : roofTints[i]));
+  model.roofs.forEach((r, i) => { const m = r.obj.children[0]; (m.userData.sk || m.material).uniforms.uTint.value.set(list ? list[i] : roofTints[i]); });
+  real.setRoofColors(list);
 }
 function highlightColumns(groups) {
   for (const [key, g] of Object.entries(model.colGroups)) {
@@ -342,6 +352,8 @@ function frame(now) {
   G.uColor.value = colorMix;
 
   applyBuild(model, state.B);
+  const wantReal = state.real && state.B >= 99.5 && state.mode !== 'count' && state.mode !== 'load';
+  if (wantReal !== real.isReal()) { real.setReal(wantReal); document.body.classList.toggle('real', wantReal); }
   if (load.pathObj.visible) {
     const t = ((now - loadStart) / 2600) % 1.25;
     load.local.uProg.value = Math.min(loadShow, t);

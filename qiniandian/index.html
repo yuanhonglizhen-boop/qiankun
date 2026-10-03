@@ -152,6 +152,14 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
 .demo-fig svg { width: 100%; height: auto; display: block; }
 .demo-fig .cap { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
 
+
+/* 写实模式：换成天光背景 */
+:root { --sky-top: #c9d6e2; --sky-bot: #efe9dd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sky-top: #1b2430; --sky-bot: #2b2721; } }
+:root[data-theme="dark"] { --sky-top: #1b2430; --sky-bot: #2b2721; }
+body.real { background-image: linear-gradient(var(--sky-top), var(--sky-bot)); background-size: 100% 100%; }
+body.real .rings { opacity: 0; }
+
 @media (max-width: 760px) {
   .titleblock { display: none; }
   .controls { width: auto; right: 16px; bottom: 12px; }
@@ -233,6 +241,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
       <button type="button" id="btnColor" aria-pressed="false">着色</button>
       <button type="button" id="btnWobble" aria-pressed="false">线条抖动</button>
       <button type="button" id="btnNarr" aria-pressed="true">讲解文字</button>
+      <button type="button" id="btnReal" aria-pressed="true">写实</button>
       <span class="sep" aria-hidden="true"></span>
       <button type="button" id="btn_count" aria-pressed="false">数柱子</button>
       <button type="button" id="btn_load" aria-pressed="false">不用大梁</button>

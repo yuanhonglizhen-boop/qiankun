@@ -155,7 +155,7 @@ void main(){
   vDet = smoothstep(7.0, 24.0, px) * (fract(aSeed * 0.5) > 0.5 ? smoothstep(18.0, 46.0, px) : 1.0);
   vec2 o = vec2(hash11(aSeed * 7.13 + uBoil * 1.37), hash11(aSeed * 3.91 + uBoil * 2.11)) - 0.5;
   gl_Position.xy += o * 2.0 * uJit * 2.0 / uRes * gl_Position.w;
-  gl_Position.z -= 0.0006 * gl_Position.w;
+  gl_Position.z -= 0.00012 * gl_Position.w;
   if (hidden) gl_Position = vec4(0.0, 0.0, -2.0, 1.0);
   #include <clipping_planes_vertex>
 }
