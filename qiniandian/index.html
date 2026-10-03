@@ -157,8 +157,7 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
 :root { --sky-top: #c9d6e2; --sky-bot: #efe9dd; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sky-top: #1b2430; --sky-bot: #2b2721; } }
 :root[data-theme="dark"] { --sky-top: #1b2430; --sky-bot: #2b2721; }
-body.real { background-image: linear-gradient(var(--sky-top), var(--sky-bot)); background-size: 100% 100%; }
-body.real .rings { opacity: 0; }
+#sky { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-bot)); opacity: 0; pointer-events: none; }
 
 @media (max-width: 760px) {
   .titleblock { display: none; }
@@ -179,6 +178,7 @@ body.real .rings { opacity: 0; }
       <circle cx="560" cy="470" r="400"/><circle cx="560" cy="470" r="520" stroke-dasharray="1 7"/>
     </g>
   </svg>
+  <div id="sky" aria-hidden="true"></div>
   <div id="stage"></div>
   <div class="bigname" aria-hidden="true"><span>祈</span><span>年</span><span>殿</span></div>
   <svg id="leaders" aria-hidden="true"></svg>

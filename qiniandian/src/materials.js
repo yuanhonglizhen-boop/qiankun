@@ -14,6 +14,7 @@ export const G = {
   uRes: { value: new THREE.Vector2(1, 1) },
   uFocal: { value: 800 },
   uDark: { value: 0 },
+  uLineFade: { value: 1 },
 };
 
 // 两套剖切：殿身用一张竖直面；夯土与地上部分用"挖槽"（两面相交才剔除）
@@ -165,14 +166,14 @@ const lineFrag = /* glsl */ `
 #include <common>
 #include <clipping_planes_pars_fragment>
 uniform vec3 uInk, uLineColor;
-uniform float uColor, uGrowY, uMode, uAlpha, uUseRed;
+uniform float uColor, uGrowY, uMode, uAlpha, uUseRed, uLineFade;
 varying vec3 vW; varying float vFade; varying float vDet;
 void main(){
   #include <clipping_planes_fragment>
   if (uMode < 0.5 && vW.y > uGrowY) discard;
   if (vDet < 0.01) discard;
   vec3 c = mix(uInk, uLineColor, uUseRed);
-  float a = uAlpha * vFade * vDet * (1.0 - 0.3 * uColor * (1.0 - uUseRed));
+  float a = uAlpha * vFade * vDet * (1.0 - 0.3 * uColor * (1.0 - uUseRed)) * mix(uLineFade, 1.0, uUseRed);
   gl_FragColor = vec4(c, a);
 }
 `;
@@ -212,7 +213,7 @@ export function lineMaterial(local, opts = {}) {
   const m = new THREE.ShaderMaterial({
     uniforms: {
       ...local,
-      uInk: G.uInk, uColor: G.uColor, uBoil: G.uBoil, uJit: G.uJit, uRes: G.uRes, uFocal: G.uFocal,
+      uInk: G.uInk, uColor: G.uColor, uBoil: G.uBoil, uJit: G.uJit, uRes: G.uRes, uFocal: G.uFocal, uLineFade: G.uLineFade,
       uDetail: { value: opts.detail ?? 200 },
       uLineColor: { value: G.uRed.value },
       uUseRed: { value: opts.red ? 1 : 0 },

@@ -34,6 +34,7 @@ controls.update();
 
 const model = buildHall(scene);
 model.clipPlanes = clipPlanes;
+model.lineFade = (v) => { G.uLineFade.value = v; };
 const real = buildReal(scene, renderer, model);
 const load = buildLoadPaths(scene);
 scene.updateMatrixWorld(true);
@@ -52,7 +53,8 @@ const state = {
   step: 0,
 };
 let colorMix = 0, sectionTween = null, camTween = null, buildAnim = null, fovTarget = 34;
-const textOn = () => state.narr && !state.playing && !buildAnim;
+let paintP = 0;
+const textOn = () => state.narr && !state.playing && !buildAnim && !(paintP > 0 && paintP < 1);
 
 // ---------- 主题 ----------
 function readTheme() {
@@ -346,14 +348,22 @@ function frame(now) {
   controls.autoRotate = state.autoRotate && !camTween;
   controls.update();
 
-  const autoColor = Math.max(0, Math.min(1, (state.B - 94) / 6));
+  // 写实开启时，线稿阶段保持黑白素描，颜色交给上色过程
+  const autoColor = state.real ? 0 : Math.max(0, Math.min(1, (state.B - 94) / 6));
   const target = state.colorOn || state.mode === 'history' || state.mode === 'count' ? 1 : autoColor;
   colorMix += (target - colorMix) * Math.min(1, dt * 3);
   G.uColor.value = colorMix;
 
   applyBuild(model, state.B);
   const wantReal = state.real && state.B >= 99.5 && state.mode !== 'count' && state.mode !== 'load';
-  if (wantReal !== real.isReal()) { real.setReal(wantReal); document.body.classList.toggle('real', wantReal); }
+  // 上色：线稿完成后约 9 秒逐部位刷出颜色；关掉写实时快速退回
+  const prevP = paintP;
+  if (!wantReal && state.B < 99.5) paintP = 0;
+  else if (reduceMotion) paintP = wantReal ? 1 : 0;
+  else if (wantReal) paintP = Math.min(1, paintP + dt / 9);
+  else paintP = Math.max(0, paintP - dt / 1.2);
+  real.setProgress(paintP);
+  if ((prevP > 0 && prevP < 1) !== (paintP > 0 && paintP < 1)) syncUI();
   if (load.pathObj.visible) {
     const t = ((now - loadStart) / 2600) % 1.25;
     load.local.uProg.value = Math.min(loadShow, t);
@@ -373,4 +383,4 @@ function updateCompass() {
 
 syncUI();
 requestAnimationFrame(frame);
-window.__qn = { state, camera, controls, model, flyTo, tweenSection, enterMode, gotoStep, exitMode };
+window.__qn = { state, camera, controls, model, flyTo, tweenSection, enterMode, gotoStep, exitMode, setPaint: (v) => { paintP = v; } };
