@@ -331,7 +331,9 @@ let loadShow = 1, loadStart = performance.now();
 
 // ---------- 主循环 ----------
 let last = performance.now(), lastSig = '';
+let video = false;
 function frame(now) {
+  if (video) { requestAnimationFrame(frame); return; }
   const dt = Math.min(0.1, (now - last) / 1000); last = now;
   G.uTime.value += dt;
   if (state.wobble) { G.uBoil.value = Math.floor(G.uTime.value * 5); G.uJit.value = 1.25; } else G.uJit.value = 0.7;
@@ -400,5 +402,49 @@ function updateCompass() {
 }
 
 syncUI();
+
+// ---------- 录制演示视频：按固定时间轴逐帧渲染 ----------
+// 0–3 秒片头；3–23 秒线描；25–37 秒上色；37–45 秒环绕成品，40 秒起片尾字
+const VKEYS = [
+  // [时间, 方位角(度，0=正南), 半径, 高度, 注视点高度]
+  [0, -38, 74, 30, 11], [3, -38, 74, 30, 11], [13, -8, 70, 32, 14], [23, 26, 68, 33, 17],
+  [25, 30, 72, 30, 17.5], [31, 12, 67, 27, 18], [37, -12, 63, 25, 18.5],
+  [41, -36, 65, 26, 18], [45, -52, 69, 28, 17.5],
+];
+const vEase = (x) => x * x * (3 - 2 * x);
+function vCam(t) {
+  let i = 0;
+  while (i < VKEYS.length - 2 && t > VKEYS[i + 1][0]) i++;
+  const a = VKEYS[i], b = VKEYS[i + 1];
+  const u = vEase(Math.max(0, Math.min(1, (t - a[0]) / (b[0] - a[0]))));
+  const L = (k) => a[k] + (b[k] - a[k]) * u;
+  const ang = THREE.MathUtils.degToRad(L(1));
+  return { pos: [Math.sin(ang) * L(2), L(3), Math.cos(ang) * L(2)], tgt: [0, L(4), 0] };
+}
+window.__qnVideo = {
+  length: 45,
+  start() {
+    video = true;
+    document.body.classList.add('video');
+    Object.assign(state, { autoRotate: false, narr: false, playing: false, painting: false, mode: 'free', S: 0 });
+    controls.enableDamping = false;
+    syncUI();
+  },
+  frame(t) {
+    G.uTime.value = t; G.uBoil.value = Math.floor(t * 5); G.uJit.value = 1.25;
+    state.B = 100 * vEase(Math.max(0, Math.min(1, (t - 3) / 20)));
+    state.paint = vEase(Math.max(0, Math.min(1, (t - 25) / 12)));
+    const c = vCam(t);
+    camera.position.set(...c.pos); controls.target.set(...c.tgt); controls.update();
+    G.uColor.value = 0;
+    applyBuild(model, state.B);
+    real.setProgress(state.B >= 99.5 ? state.paint : 0);
+    updateSection();
+    renderer.render(scene, camera);
+    const fade = (a, b, c2, d) => Math.max(0, Math.min(1, (t - a) / (b - a), (d - t) / (d - c2)));
+    $('#vTitle').style.opacity = String(fade(0.2, 1.0, 2.4, 3.2));
+    $('#vEnd').style.opacity = String(fade(40, 41.2, 99, 100));
+  },
+};
 requestAnimationFrame(frame);
 window.__qn = { state, camera, controls, model, flyTo, tweenSection, enterMode, gotoStep, exitMode, setPaint: (v) => { state.paint = v; } };

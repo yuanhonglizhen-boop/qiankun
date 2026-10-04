@@ -160,6 +160,20 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
 :root[data-theme="dark"] { --sky-top: #1b2430; --sky-bot: #2b2721; }
 #sky { position: absolute; inset: 0; background: linear-gradient(var(--sky-top), var(--sky-bot)); opacity: 0; pointer-events: none; }
 
+
+/* 录制视频时：只留画面与片头片尾字 */
+.vcard { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; text-align: center; }
+.vcard h2 { margin: 0; font-family: var(--f-display); font-weight: 900; font-size: 84px; letter-spacing: 0.32em; padding-left: 0.32em; color: var(--ink); }
+.vcard p { margin: 14px 0 0; font-family: var(--f-display); font-size: 26px; letter-spacing: 0.4em; padding-left: 0.4em; color: var(--ink-soft); }
+.vcard .en { font-family: var(--f-mono); font-size: 15px; letter-spacing: 0.3em; color: var(--red); margin-top: 10px; }
+body:not(.video) .vcard { display: none; }
+body.video .head, body.video .controls, body.video .titleblock, body.video .compass, body.video .panel,
+body.video .bigname, body.video #labels, body.video #leaders, body.video .rings { display: none !important; }
+#vEnd { place-items: center start; padding-left: 9vw; text-align: left; }
+#vEnd h2 { padding-left: 0; } #vEnd p { padding-left: 0; }
+#vEnd h2 { font-size: 46px; color: #2b2d31; text-shadow: 0 1px 12px rgba(255,255,255,0.6); }
+#vEnd p { font-size: 20px; color: #3e4148; }
+
 @media (max-width: 760px) {
   .titleblock { display: none; }
   .controls { width: auto; right: 16px; bottom: 12px; }
@@ -181,6 +195,8 @@ input[type=range]:focus-visible { outline: 1px dashed var(--red); outline-offset
   </svg>
   <div id="sky" aria-hidden="true"></div>
   <div id="stage"></div>
+  <div class="vcard" id="vTitle"><div><h2>祈年殿</h2><p>天坛 · 明清皇帝孟春祈谷之所</p><div class="en">HALL OF PRAYER FOR GOOD HARVESTS</div></div></div>
+  <div class="vcard" id="vEnd"><div><h2>祈年殿</h2><p>三重檐 · 二十八柱 · 不用大梁长檩</p></div></div>
   <div class="bigname" aria-hidden="true"><span>祈</span><span>年</span><span>殿</span></div>
   <svg id="leaders" aria-hidden="true"></svg>
   <div id="labels" aria-hidden="true"></div>
